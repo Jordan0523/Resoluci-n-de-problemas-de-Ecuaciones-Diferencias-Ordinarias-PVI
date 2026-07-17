@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Métodos Numéricos para PVI</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #131722;
+    --panel-2: #1a1f2e;
+    --border: #262c3d;
+    --text: #e6e9f0;
+    --text-dim: #8892a6;
+    --accent: #4f9dff;
+    --accent-2: #22c9a3;
+    --danger: #ff5d6c;
+    --warn: #ffb454;
+    --mono: 'Consolas', 'SFMono-Regular', Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: radial-gradient(circle at top left, #10131c, #05060a 70%);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 32px 20px 60px;
+  }
+
+  .wrap { max-width: 1140px; margin: 0 auto; }
+
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  header.top h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+
+  header.top h1 span { color: var(--accent); }
+
+  header.top p {
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  .badge {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+  }
+
+  .panel h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+    font-weight: 600;
+  }
+
+  .grid-inputs {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+    gap: 14px;
+    align-items: end;
+  }
+
+  @media (max-width: 900px) {
+    .grid-inputs { grid-template-columns: 1fr 1fr; }
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+
+  input[type=text], input[type=number] {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--mono);
+    outline: none;
+    transition: border-color .15s;
+  }
+
+  input:focus { border-color: var(--accent); }
+
+  button.primary {
+    background: linear-gradient(135deg, var(--accent), #2f6fe0);
+    color: white;
+    border: none;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity .15s;
+  }
+
+  button.primary:hover { opacity: 0.88; }
+
+  .hint {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .hint code {
+    background: var(--panel-2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--accent-2);
+    font-family: var(--mono);
+  }
+
+  #error-box {
+    display: none;
+    margin-top: 14px;
+    background: rgba(255, 93, 108, 0.1);
+    border: 1px solid rgba(255, 93, 108, 0.35);
+    color: var(--danger);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  #resultados { display: none; }
+
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .card {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .card .label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .card .value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 900px) {
+    .compare-grid { grid-template-columns: 1fr; }
+  }
+
+  .method-card {
+    border-radius: 12px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+  }
+
+  .method-card.euler { background: linear-gradient(160deg, rgba(79,157,255,0.12), var(--panel-2)); }
+  .method-card.rk4 { background: linear-gradient(160deg, rgba(34,201,163,0.12), var(--panel-2)); }
+  .method-card.diff { background: var(--panel-2); display: flex; flex-direction: column; justify-content: center; }
+
+  .method-card .title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .dot.euler-dot { background: var(--accent); }
+  .dot.rk4-dot { background: var(--accent-2); }
+
+  .method-card .big {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .method-card .sub { font-size: 12px; color: var(--text-dim); }
+
+  #warning-box {
+    display: none;
+    margin-top: 16px;
+    background: rgba(255, 180, 84, 0.1);
+    border: 1px solid rgba(255, 180, 84, 0.35);
+    color: var(--warn);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .switch-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .switch {
+    width: 34px;
+    height: 18px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    position: relative;
+    transition: background .15s;
+  }
+
+  .switch::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: transform .15s, background .15s;
+  }
+
+  .switch.on { background: rgba(79,157,255,0.25); border-color: var(--accent); }
+  .switch.on::after { transform: translateX(16px); background: var(--accent); }
+
+  .table-scroll {
+    max-height: 480px;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: #1c2131;
+    color: var(--text-dim);
+    text-align: right;
+    padding: 10px 12px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  thead th:first-child, tbody td:first-child { text-align: left; }
+
+  tbody td {
+    padding: 8px 12px;
+    text-align: right;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    white-space: nowrap;
+  }
+
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  .col-detail { display: none; }
+  .show-detail .col-detail { display: table-cell; }
+
+  .divergence-row td {
+    color: var(--danger);
+    text-align: left;
+    font-family: 'Segoe UI', sans-serif;
+    background: rgba(255,93,108,0.06);
+  }
+
+  footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 30px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div>
+      <h1>Dashboard <span>·</span> Métodos Numéricos para PVI</h1>
+      <p>Euler Mejorado &amp; Runge-Kutta de 4° orden — resolución interactiva de y' = f(x, y)</p>
+    </div>
+    <div class="badge">Proyecto 5 · Ecuaciones Diferenciales Ordinarias</div>
+  </header>
+
+  <section class="panel">
+    <h2>Datos del problema</h2>
+    <div class="grid-inputs">
+      <div>
+        <label>Ecuación y' = f(x, y)</label>
+        <input type="text" id="eq" value="x**3*y - 1.5*y" placeholder="ej: x**3*y - 1.5*y">
+      </div>
+      <div>
+        <label>x0</label>
+        <input type="number" id="x0" value="0" step="any">
+      </div>
+      <div>
+        <label>y0</label>
+        <input type="number" id="y0" value="1" step="any">
+      </div>
+      <div>
+        <label>xn</label>
+        <input type="number" id="xn" value="2" step="any">
+      </div>
+      <div>
+        <label>n (intervalos)</label>
+        <input type="number" id="n" value="10" step="1" min="1">
+      </div>
+      <button class="primary" onclick="calcular()">Calcular</button>
+    </div>
+    <div class="hint">
+      Operadores: <code>+ - * / **</code> (o <code>^</code> para potencia). Funciones: <code>sin cos tan asin acos atan sinh cosh tanh exp log ln log10 sqrt fabs pow</code>. Constantes: <code>pi</code>, <code>e</code>.
+    </div>
+    <div id="error-box"></div>
+  </section>
+
+  <section id="resultados">
+
+    <section class="panel">
+      <h2>Resumen</h2>
+      <div class="summary-cards">
+        <div class="card"><div class="label">Ecuación</div><div class="value" id="r-eq">—</div></div>
+        <div class="card"><div class="label">x0 → xn</div><div class="value" id="r-rango">—</div></div>
+        <div class="card"><div class="label">y0</div><div class="value" id="r-y0">—</div></div>
+        <div class="card"><div class="label">Intervalos (n)</div><div class="value" id="r-n">—</div></div>
+        <div class="card"><div class="label">Paso (h)</div><div class="value" id="r-h">—</div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Comparación final</h2>
+      <div class="compare-grid">
+        <div class="method-card euler">
+          <div class="title"><span class="dot euler-dot"></span>Euler Mejorado</div>
+          <div class="big" id="c-euler-y">—</div>
+          <div class="sub" id="c-euler-x">—</div>
+        </div>
+        <div class="method-card rk4">
+          <div class="title"><span class="dot rk4-dot"></span>Runge-Kutta 4</div>
+          <div class="big" id="c-rk4-y">—</div>
+          <div class="sub" id="c-rk4-x">—</div>
+        </div>
+        <div class="method-card diff">
+          <div class="title">Diferencia absoluta</div>
+          <div class="big" id="c-diff">—</div>
+          <div class="sub">|y_euler − y_rk4| en el último x común</div>
+        </div>
+      </div>
+      <div id="warning-box"></div>
+    </section>
+
+    <section class="panel">
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-euler" onclick="cambiarTab('euler')">Euler Mejorado</button>
+        <button class="tab-btn" id="tab-rk4" onclick="cambiarTab('rk4')">Runge-Kutta 4</button>
+      </div>
+
+      <div class="table-toolbar">
+        <span id="tabla-titulo" style="font-size:13px; color:var(--text-dim);">Tabla de iteraciones — Euler Mejorado</span>
+        <div class="switch-wrap" onclick="toggleDetalle()">
+          <span>Detalle paso a paso (k1, k2, k3, k4, y_pred)</span>
+          <div class="switch" id="switch-detalle"></div>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table id="tabla-euler">
+          <thead>
+            <tr>
+              <th>Paso</th><th>x</th><th class="col-detail">k1</th><th class="col-detail">y_pred</th><th class="col-detail">k2</th><th>y</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-euler"></tbody>
+        </table>
+        <table id="tabla-rk4" style="display:none;">
+          <thead>
+            <tr>
+              <th>Paso</th><th>x</th><th class="col-detail">k1</th><th class="col-detail">k2</th><th class="col-detail">k3</th><th class="col-detail">k4</th><th>y</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-rk4"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </section>
+
+  <footer>Cálculos ejecutados localmente en el navegador · JavaScript</footer>
+</div>
+
+<script>
+const FUNC_NAMES = ['sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','exp','log','log10','ln','sqrt','fabs','pow','pi','e'];
+const FUNC_VALUES = {
+  sin: Math.sin, cos: Math.cos, tan: Math.tan,
+  asin: Math.asin, acos: Math.acos, atan: Math.atan,
+  sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+  exp: Math.exp, log: Math.log, log10: Math.log10, ln: Math.log,
+  sqrt: Math.sqrt, fabs: Math.abs, pow: Math.pow,
+  pi: Math.PI, e: Math.E
+};
+
+function construirFuncion(expresion) {
+  const expr = expresion.replace(/\^/g, '**');
+  let fn;
+  try {
+    fn = new Function('x', 'y', ...FUNC_NAMES, `"use strict"; return (${expr});`);
+  } catch (err) {
+    throw new Error('Sintaxis inválida: ' + err.message);
+  }
+  const args = FUNC_NAMES.map(name => FUNC_VALUES[name]);
+  return function (x, y) {
+    return fn(x, y, ...args);
+  };
+}
+
+function noFinito(v) {
+  return typeof v !== 'number' || Number.isNaN(v) || !Number.isFinite(v);
+}
+
+function eulerMejorado(f, x0, y0, h, n) {
+  const resultados = [{ paso: 0, x: x0, y: y0 }];
+  let x = x0, y = y0, paso = 0;
+  let divergio = false, mensaje = '';
+
+  for (let i = 0; i < n; i++) {
+    let k1, yPred, k2, yNuevo;
+    try {
+      k1 = f(x, y);
+      yPred = y + h * k1;
+      k2 = f(x + h, yPred);
+      yNuevo = y + (h / 2) * (k1 + k2);
+      if (noFinito(yNuevo)) throw new Error('resultado no finito (NaN o infinito)');
+    } catch (err) {
+      divergio = true;
+      mensaje = `La solución diverge cerca de x = ${x.toFixed(6)}. Detalle: ${err.message}`;
+      break;
+    }
+    paso += 1;
+    x = x0 + paso * h;
+    y = yNuevo;
+    resultados.push({ paso, x, y, k1, k2, yPred });
+  }
+  return { resultados, divergio, mensaje };
+}
+
+function rungeKutta4(f, x0, y0, h, n) {
+  const resultados = [{ paso: 0, x: x0, y: y0 }];
+  let x = x0, y = y0, paso = 0;
+  let divergio = false, mensaje = '';
+
+  for (let i = 0; i < n; i++) {
+    let k1, k2, k3, k4, yNuevo;
+    try {
+      k1 = f(x, y);
+      k2 = f(x + h / 2, y + h * k1 / 2);
+      k3 = f(x + h / 2, y + h * k2 / 2);
+      k4 = f(x + h, y + h * k3);
+      yNuevo = y + (h / 6) * (k1 + 2 * k2 + 2 * k3 + k4);
+      if (noFinito(yNuevo)) throw new Error('resultado no finito (NaN o infinito)');
+    } catch (err) {
+      divergio = true;
+      mensaje = `La solución diverge cerca de x = ${x.toFixed(6)}. Detalle: ${err.message}`;
+      break;
+    }
+    paso += 1;
+    x = x0 + paso * h;
+    y = yNuevo;
+    resultados.push({ paso, x, y, k1, k2, k3, k4 });
+  }
+  return { resultados, divergio, mensaje };
+}
+
+function fmt(v, dec = 8) {
+  if (v === undefined) return '';
+  if (noFinito(v)) return '—';
+  return v.toFixed(dec);
+}
+
+function mostrarError(msg) {
+  const box = document.getElementById('error-box');
+  box.style.display = 'block';
+  box.textContent = msg;
+  document.getElementById('resultados').style.display = 'none';
+}
+
+function ocultarError() {
+  document.getElementById('error-box').style.display = 'none';
+}
+
+function calcular() {
+  ocultarError();
+  const eqTexto = document.getElementById('eq').value.trim();
+  const x0 = parseFloat(document.getElementById('x0').value);
+  const y0 = parseFloat(document.getElementById('y0').value);
+  const xn = parseFloat(document.getElementById('xn').value);
+  const n = parseInt(document.getElementById('n').value, 10);
+
+  if (!eqTexto) return mostrarError('Ingresa una ecuación y\' = f(x, y).');
+  if ([x0, y0, xn].some(Number.isNaN) || Number.isNaN(n)) return mostrarError('Revisa que x0, y0, xn y n sean números válidos.');
+  if (xn <= x0) return mostrarError('xn debe ser mayor que x0.');
+  if (n <= 0) return mostrarError('n debe ser un entero mayor que 0.');
+
+  let f;
+  try {
+    f = construirFuncion(eqTexto);
+    const prueba = f(1, 1);
+    if (typeof prueba !== 'number') throw new Error('la expresión no evaluó a un número');
+  } catch (err) {
+    return mostrarError('Error en la ecuación: ' + err.message);
+  }
+
+  const h = (xn - x0) / n;
+
+  const euler = eulerMejorado(f, x0, y0, h, n);
+  const rk4 = rungeKutta4(f, x0, y0, h, n);
+
+  document.getElementById('r-eq').textContent = "y' = " + eqTexto;
+  document.getElementById('r-rango').textContent = `${x0} → ${xn}`;
+  document.getElementById('r-y0').textContent = y0;
+  document.getElementById('r-n').textContent = n;
+  document.getElementById('r-h').textContent = h.toFixed(6);
+
+  const eulerFinal = euler.resultados[euler.resultados.length - 1];
+  const rk4Final = rk4.resultados[rk4.resultados.length - 1];
+
+  document.getElementById('c-euler-y').textContent = 'y = ' + fmt(eulerFinal.y);
+  document.getElementById('c-euler-x').textContent = 'en x = ' + eulerFinal.x.toFixed(6) + (euler.divergio ? ' (divergió)' : '');
+  document.getElementById('c-rk4-y').textContent = 'y = ' + fmt(rk4Final.y);
+  document.getElementById('c-rk4-x').textContent = 'en x = ' + rk4Final.x.toFixed(6) + (rk4.divergio ? ' (divergió)' : '');
+
+  const warningBox = document.getElementById('warning-box');
+  const mismoX = Math.abs(eulerFinal.x - rk4Final.x) < 1e-9;
+
+  if (!mismoX || euler.divergio || rk4.divergio) {
+    warningBox.style.display = 'block';
+    let texto = 'Aviso: ';
+    if (euler.divergio) texto += euler.mensaje + ' (Euler Mejorado). ';
+    if (rk4.divergio) texto += rk4.mensaje + ' (Runge-Kutta 4). ';
+    if (!mismoX) texto += 'Los dos métodos no llegaron al mismo valor final de x, por lo que la diferencia absoluta no es comparable directamente.';
+    warningBox.textContent = texto;
+    document.getElementById('c-diff').textContent = '—';
+  } else {
+    warningBox.style.display = 'none';
+    document.getElementById('c-diff').textContent = fmt(Math.abs(eulerFinal.y - rk4Final.y));
+  }
+
+  llenarTabla('tbody-euler', euler.resultados, 'euler');
+  llenarTabla('tbody-rk4', rk4.resultados, 'rk4');
+
+  document.getElementById('resultados').style.display = 'block';
+}
+
+function llenarTabla(bodyId, resultados, tipo) {
+  const tbody = document.getElementById(bodyId);
+  tbody.innerHTML = '';
+  resultados.forEach(r => {
+    const tr = document.createElement('tr');
+    if (tipo === 'euler') {
+      tr.innerHTML = `
+        <td>${r.paso}</td>
+        <td>${r.x.toFixed(6)}</td>
+        <td class="col-detail">${fmt(r.k1)}</td>
+        <td class="col-detail">${fmt(r.yPred)}</td>
+        <td class="col-detail">${fmt(r.k2)}</td>
+        <td>${fmt(r.y)}</td>`;
+    } else {
+      tr.innerHTML = `
+        <td>${r.paso}</td>
+        <td>${r.x.toFixed(6)}</td>
+        <td class="col-detail">${fmt(r.k1)}</td>
+        <td class="col-detail">${fmt(r.k2)}</td>
+        <td class="col-detail">${fmt(r.k3)}</td>
+        <td class="col-detail">${fmt(r.k4)}</td>
+        <td>${fmt(r.y)}</td>`;
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+function cambiarTab(tipo) {
+  document.getElementById('tab-euler').classList.toggle('active', tipo === 'euler');
+  document.getElementById('tab-rk4').classList.toggle('active', tipo === 'rk4');
+  document.getElementById('tabla-euler').style.display = tipo === 'euler' ? 'table' : 'none';
+  document.getElementById('tabla-rk4').style.display = tipo === 'rk4' ? 'table' : 'none';
+  document.getElementById('tabla-titulo').textContent = 'Tabla de iteraciones — ' + (tipo === 'euler' ? 'Euler Mejorado' : 'Runge-Kutta 4');
+}
+
+function toggleDetalle() {
+  const sw = document.getElementById('switch-detalle');
+  const on = sw.classList.toggle('on');
+  document.getElementById('tabla-euler').classList.toggle('show-detail', on);
+  document.getElementById('tabla-rk4').classList.toggle('show-detail', on);
+}
+
+// Cálculo inicial de ejemplo al cargar la página
+calcular();
+</script>
+</body>
+</html>
